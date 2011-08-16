@@ -23,6 +23,7 @@ from pisa_reportlab import *
 from pisa_util import *
 
 from reportlab.graphics.barcode.code39 import Standard39
+from reportlab.graphics.barcode.code128 import Code128
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus.flowables import *
 from reportlab.platypus.paraparser import tt2ps, ABag
@@ -38,6 +39,11 @@ import warnings
 
 import logging
 log = logging.getLogger("ho.pisa")
+
+BARCODES = {
+    'code39' : Standard39,
+    'code128': Code128
+}
 
 def deprecation(message):
     warnings.warn("<" + message + "> is deprecated!", DeprecationWarning, stacklevel=2)
@@ -584,18 +590,22 @@ class pisaTagPDFFONT(pisaTag):
         deprecation("pdf:font")
         c.loadFont(self.attr.name, self.attr.src, self.attr.encoding)
 
+
 class pisaTagPDFBARCODE(pisaTag):
     """
-    <pdf:barcode value="" align="">
+    <pdf:barcode value="" align="" height="" type="">
     """
     def start(self, c):
         c.addPara()
-        attr = self.attr       
-        bc = Standard39()
+        attr = self.attr
+        bc = BARCODES[attr.type]()
+        bc.checksum = 0
         bc.value = attr.value
-        bc.barHeight = 0.5 * inch
+        bc.barHeight = attr.height * mm
+        bc.barWidth = inch * 0.0125
         bc.lquiet = 0 # left padding
         bc.rquiet = 0 # left padding
         bc.hAlign = attr.align.upper()
         c.addStory(bc)
-        c.addPara() 
+        c.addPara()
+
